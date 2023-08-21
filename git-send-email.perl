@@ -256,6 +256,26 @@ sub system_or_die {
 	die $msg if $msg;
 }
 
+my $sent_files = 0;
+
+sub do_exit {
+	if ($sent_files == @files) {
+		# All specified messages were sent
+		exit(0);
+	} elsif ($sent_files) {
+		# At least some messages were sent
+		exit(10);
+	} else {
+		# User skipped all messages or quit before sending the first one
+		exit(11);
+	}
+}
+
+sub do_quit {
+	cleanup_compose_files();
+	do_exit();
+}
+
 sub do_edit {
 	if (!defined($editor)) {
 		$editor = Git::command_oneline('var', 'GIT_EDITOR');
@@ -1195,8 +1215,7 @@ sub validate_address {
 		if (/^d/i) {
 			return undef;
 		} elsif (/^q/i) {
-			cleanup_compose_files();
-			exit(0);
+			do_quit();
 		}
 		$address = ask("$to_whom ",
 			default => "",
@@ -1619,8 +1638,7 @@ EOF
 		} elsif (/^e/i) {
 			return -1;
 		} elsif (/^q/i) {
-			cleanup_compose_files();
-			exit(0);
+			do_quit();
 		} elsif (/^a/i) {
 			$confirm = 'never';
 		}
@@ -2001,6 +2019,10 @@ sub process_file {
 		return 0;
 	}
 
+	if ($message_was_sent) {
+		$sent_files++;
+	}
+
 	# set up for the next message
 	if ($thread) {
 		if ($message_was_sent &&
@@ -2278,3 +2300,5 @@ sub body_or_subject_has_nonascii {
 	}
 	return 0;
 }
+
+do_exit();
