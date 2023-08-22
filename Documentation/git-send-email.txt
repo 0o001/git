@@ -480,6 +480,15 @@ include::includes/cmd-config-section-all.txt[]
 
 include::config/sendemail.txt[]
 
+
+EXIT STATUS
+-----------
+
+Zero is returned when all specified patches were sent, while 1 is returned
+when an error occurs. 10 is returned if the user interactively skips sending
+only some patches, and 11 if they skip all patches.
+
+
 EXAMPLES
 --------
 Use gmail as the smtp server

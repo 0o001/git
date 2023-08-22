@@ -1187,6 +1187,42 @@ test_expect_success $PREREQ 'confirm does not loop forever' '
 			$patches
 '
 
+test_confirm_many () {
+	clean_fake_sendmail
+	GIT_SEND_EMAIL_NOTTY=1 \
+	git send-email \
+		--confirm=auto \
+		--from="Example <nobody@example.com>" \
+		--to=nobody@example.com \
+		--smtp-server="$(pwd)/fake.sendmail" \
+		-2 <replies
+	echo $? >exit_sts
+	test_cmp expected_sts exit_sts || return 1
+	ls commandline* 2>/dev/null | wc -l >num_mails
+	test_cmp expected_num num_mails || return 1
+}
+
+test_expect_success $PREREQ 'interactively skip none' '
+	(echo y && echo y) >replies &&
+	echo 0 >expected_sts &&
+	echo 2 >expected_num &&
+	test_confirm_many
+'
+
+test_expect_success $PREREQ 'interactively skip some' '
+	(echo n && echo y) >replies &&
+	echo 10 >expected_sts &&
+	echo 1 >expected_num &&
+	test_confirm_many
+'
+
+test_expect_success $PREREQ 'interactively skip all' '
+	(echo n && echo n) >replies &&
+	echo 11 >expected_sts &&
+	echo 0 >expected_num &&
+	test_confirm_many
+'
+
 test_expect_success $PREREQ 'utf8 Cc is rfc2047 encoded' '
 	clean_fake_sendmail &&
 	rm -fr outdir &&
